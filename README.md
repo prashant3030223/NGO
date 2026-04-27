@@ -28,22 +28,40 @@ RescueMatch AI is a production-quality hackathon project designed to convert uns
 
 ### 1. Prerequisites
 - Node.js (v18+)
-- OpenAI API Key (optional, fallback provided)
+- Firebase Project (Firestore enabled)
+- OpenAI API Key
 
-### 2. Backend Setup
+### 2. Local Development
+You can now run both client and server from the root directory:
 ```bash
-cd server
-npm install
-# Create .env and add your keys
-npm start
-```
-
-### 3. Frontend Setup
-```bash
-cd client
-npm install
+npm run install-all
 npm run dev
 ```
+
+### 3. Production Deployment
+This project is configured to be deployed as a single unit where the Node.js server serves the React frontend.
+
+1. **Build the frontend**:
+   ```bash
+   npm run build
+   ```
+2. **Configure Environment Variables**:
+   - Copy `server/.env.example` to `server/.env` and fill in the values.
+   - Copy `client/.env.example` to `client/.env` and fill in the values.
+3. **Start the server**:
+   ```bash
+   npm start
+   ```
+
+The server will automatically serve the built frontend from `client/dist`.
+
+---
+
+## 🌐 Deployment Platforms
+
+- **Render / Heroku / DigitalOcean**: Use the root `package.json`. The `build` script will install everything and build the client. The `start` script will launch the production server.
+- **Vercel / Netlify**: These are typically for frontend-only. For this MERN stack, a platform that supports Node.js (like Render or Railway) is recommended.
+
 
 ---
 

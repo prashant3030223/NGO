@@ -8,7 +8,7 @@ import {
   GithubAuthProvider,
   createUserWithEmailAndPassword
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { Shield, Mail, Lock, Globe, ArrowRight, Loader2, Code as CodeIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -38,7 +38,10 @@ const Login = () => {
           created_at: new Date()
         });
       } else {
-        await signInWithEmailAndPassword(auth, email, password);
+        const { user } = await signInWithEmailAndPassword(auth, email, password);
+        if (inviteNGO) {
+          await updateDoc(doc(db, 'profiles', user.uid), { ngo_id: inviteNGO });
+        }
       }
     } catch (err) { setError(err.message); }
     setLoading(false);
@@ -60,6 +63,8 @@ const Login = () => {
           points: 0,
           created_at: new Date()
         });
+      } else if (inviteNGO) {
+        await updateDoc(docRef, { ngo_id: inviteNGO });
       }
     } catch (err) { setError(err.message); }
   };

@@ -1,0 +1,16 @@
+{
+  "name": "ngo-platform-root",
+  "version": "1.0.0",
+  "scripts": {
+    "install-client": "cd client && npm install",
+    "install-server": "cd server && npm install",
+    "install-all": "npm run install-client && npm run install-server",
+    "build-client": "cd client && npm run build",
+    "start": "cd server && NODE_ENV=production npm start",
+    "dev": "concurrently \"cd server && npm run dev\" \"cd client && npm run dev\"",
+    "build": "npm run install-all && npm run build-client"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

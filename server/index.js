@@ -52,10 +52,19 @@ const app = express();
 const server = http.createServer(app);
 const port = process.env.PORT || 5002;
 
-app.use(cors());
+// Dynamic CORS based on environment
+const corsOptions = {
+  origin: process.env.NODE_ENV === 'production' 
+    ? process.env.FRONTEND_URL 
+    : ['http://localhost:5173', 'http://localhost:3000'],
+  credentials: true
+};
+app.use(cors(process.env.NODE_ENV === 'production' ? corsOptions : {}));
+
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+// API Routes
 const upload = multer({ dest: 'uploads/' });
 
 app.post('/api/ingest', upload.single('file'), async (req, res) => {
@@ -75,11 +84,9 @@ app.post('/api/ingest', upload.single('file'), async (req, res) => {
       const needRef = db.collection('needs').doc();
       await needRef.set({ ...analysis, id: needRef.id, timestamp: admin.firestore.FieldValue.serverTimestamp() });
     } else {
-      // SIMULATION MODE: Update mock state
       const newNeed = { ...analysis, id: 'n' + Date.now(), timestamp: new Date() };
       mockNeeds.push(newNeed);
       mockAssignments = runMatching(mockNeeds, mockVolunteers);
-      console.log('✨ Simulation: Needs updated and matching recalculated.');
     }
     
     res.json({ success: true, analysis });
@@ -93,9 +100,18 @@ app.post('/api/match', async (req, res) => {
     mockAssignments = runMatching(mockNeeds, mockVolunteers);
     return res.json({ success: true, assignments: mockAssignments });
   }
-  // Logic for DB already handled by listener
   res.json({ success: true });
 });
+
+// Production: Serve frontend
+if (process.env.NODE_ENV === 'production') {
+  const clientBuildPath = path.join(__dirname, '../client/dist');
+  app.use(express.static(clientBuildPath));
+  
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
+  });
+}
 
 const runMatching = (needs, volunteers) => {
   const assignments = [];
@@ -114,4 +130,4 @@ const runMatching = (needs, volunteers) => {
   return assignments;
 };
 
-server.listen(port, () => console.log(`🚀 Automated AI Backend running at http://localhost:${port}`));
+server.listen(port, () => console.log(`🚀 Production-ready Backend running on port ${port}`));

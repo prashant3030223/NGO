@@ -19,7 +19,7 @@ const UploadPanel = ({ onComplete }) => {
     if (file) formData.append('file', file);
     if (textInput) formData.append('textInput', textInput);
     try {
-      const res = await axios.post('http://localhost:5002/api/ingest', formData, {
+      const res = await axios.post('/api/ingest', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       setResult(res.data.analysis);
