@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary-50: #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-200: #bae6fd;
+  --color-primary-300: #7dd3fc;
+  --color-primary-400: #38bdf8;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+  --color-primary-800: #075985;
+  --color-primary-900: #0c4a6e;
+  
+  --color-urgency-critical: #f43f5e;
+  --color-urgency-moderate: #f59e0b;
+  --color-urgency-low: #10b981;
+  
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-scan: scan 4s linear infinite;
+  
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-display: "Outfit", system-ui, sans-serif;
+}
+
+@keyframes scan {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(1000%); }
+}
+
+:root {
+  font-family: var(--font-sans);
+  background-color: #020617;
+  color: #f8fafc;
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.glass-card {
+  background: rgba(15, 23, 42, 0.6);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 1.5rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+}
+
+.hud-border {
+  position: relative;
+}
+
+.hud-border::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(14, 165, 233, 0.1);
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.scanner-line {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background: linear-gradient(to right, transparent, rgba(14, 165, 233, 0.5), transparent);
+  animation: scan 4s linear infinite;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #020617 !important;
+  z-index: 0;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(14, 165, 233, 0.2);
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(14, 165, 233, 0.4);
+}
+
+.premium-popup .leaflet-popup-content-wrapper {
+  background: #0f172a !important;
+  color: white !important;
+  border: 1px solid rgba(14, 165, 233, 0.2);
+  border-radius: 12px;
+}
+
+.premium-popup .leaflet-popup-tip {
+  background: #0f172a !important;
+}

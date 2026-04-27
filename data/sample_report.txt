@@ -1,0 +1,9 @@
+REPORT: Sector 15 Emergency
+Date: 2026-04-27
+Status: URGENT
+
+We have a major food shortage in the Sector 15 area. Over 50 families are without basic supplies for the last 3 days. We need immediate logistics support and food packages. Medical kits are also running low but food is the priority.
+
+Location: Sector 15, Near Central Park
+Urgency: High
+Type: Food, Logistics
