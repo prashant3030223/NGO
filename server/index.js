@@ -12,7 +12,7 @@ const ocrService = require('./services/ocrService');
 // Firebase Admin Setup with Graceful Error Handling
 let db = null;
 try {
-  if (!admin.apps.length && process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_PRIVATE_KEY !== 'your_service_account_private_key') {
+  if (!admin.apps.length && process.env.FIREBASE_PRIVATE_KEY && process.env.FIREBASE_PRIVATE_KEY !== 'your_service_account_private_key' && !process.env.FIREBASE_PRIVATE_KEY.includes('...')) {
     admin.initializeApp({
       credential: admin.credential.cert({
         project_id: process.env.FIREBASE_PROJECT_ID,
@@ -22,155 +22,96 @@ try {
     });
     db = admin.firestore();
     console.log('✅ Firebase Admin initialized');
+    setupRealtimeMatching();
   } else {
-    console.warn('⚠️ Firebase credentials missing or default. Firestore write disabled.');
+    console.warn('⚠️ Firebase credentials missing or invalid. Running in SIMULATION MODE.');
   }
 } catch (error) {
   console.error('❌ Firebase Admin init failed:', error.message);
 }
 
+// MOCK STORE FOR SIMULATION MODE
+let mockNeeds = [];
+let mockVolunteers = [
+  { id: 'v1', name: 'Rahul Sharma', skills: ['medical', 'food'], location: { lat: 28.6139, lng: 77.2090 } },
+  { id: 'v2', name: 'Anita Desai', skills: ['shelter', 'logistics'], location: { lat: 28.6339, lng: 77.2290 } }
+];
+let mockAssignments = [];
+
+function setupRealtimeMatching() {
+  db.collection('needs').onSnapshot(async (snapshot) => {
+    const needs = snapshot.docs.map(doc => doc.data());
+    const volunteersSnapshot = await db.collection('volunteers').get();
+    const volunteers = volunteersSnapshot.docs.map(doc => doc.data());
+    const assignments = runMatching(needs, volunteers);
+    await db.collection('meta').doc('assignments').set({ data: assignments, updatedAt: new Date() });
+  }, err => console.error('Match Listener Error:', err));
+}
+
 const app = express();
 const server = http.createServer(app);
-const port = process.env.PORT || 5001;
+const port = process.env.PORT || 5002;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Multer setup
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, 'uploads/'),
-  filename: (req, file, cb) => cb(null, Date.now() + '-' + file.originalname)
-});
-const upload = multer({ storage });
+const upload = multer({ dest: 'uploads/' });
 
-// Routes
 app.post('/api/ingest', upload.single('file'), async (req, res) => {
-  console.log('🚀 Ingest Request Received');
   try {
     const { textInput } = req.body;
     let extractedText = textInput || '';
 
     if (req.file) {
-      console.log('📂 Processing file:', req.file.originalname);
-      const fileExtension = path.extname(req.file.originalname).toLowerCase();
-      if (['.jpg', '.jpeg', '.png'].includes(fileExtension)) {
-        extractedText = await ocrService.processImage(req.file.path);
-      } else if (fileExtension === '.pdf') {
-        extractedText = await ocrService.processPDF(req.file.path);
-      }
+      const ext = path.extname(req.file.originalname).toLowerCase();
+      if (['.jpg', '.jpeg', '.png'].includes(ext)) extractedText = await ocrService.processImage(req.file.path);
+      else if (ext === '.pdf') extractedText = await ocrService.processPDF(req.file.path);
     }
 
-    if (!extractedText || extractedText.trim() === '') {
-      console.warn('⚠️ No text extracted from input');
-      return res.status(400).json({ error: 'No readable text found' });
-    }
-
-    console.log('🧠 Analyzing with AI...');
     const analysis = await aiService.analyzeNeed(extractedText);
     
-    // Save to Firestore if available
     if (db) {
-      try {
-        const needRef = db.collection('needs').doc();
-        await needRef.set({
-          ...analysis,
-          id: needRef.id,
-          timestamp: admin.firestore.FieldValue.serverTimestamp()
-        });
-        console.log('💾 Saved to Firestore');
-      } catch (dbErr) {
-        console.error('❌ Firestore Save Failed:', dbErr.message);
-      }
+      const needRef = db.collection('needs').doc();
+      await needRef.set({ ...analysis, id: needRef.id, timestamp: admin.firestore.FieldValue.serverTimestamp() });
     } else {
-      console.log('💡 Mock Save (No DB):', analysis);
+      // SIMULATION MODE: Update mock state
+      const newNeed = { ...analysis, id: 'n' + Date.now(), timestamp: new Date() };
+      mockNeeds.push(newNeed);
+      mockAssignments = runMatching(mockNeeds, mockVolunteers);
+      console.log('✨ Simulation: Needs updated and matching recalculated.');
     }
     
-    console.log('✅ Sending Response');
     res.json({ success: true, analysis });
   } catch (error) {
-    console.error('🔴 Ingestion Route Error:', error);
-    res.status(500).json({ error: error.message || 'Internal Server Error' });
+    res.status(500).json({ error: 'Processing failed' });
   }
 });
 
 app.post('/api/match', async (req, res) => {
-  try {
-    if (!db) return res.status(500).json({ error: 'Database not connected' });
-
-    const needsSnapshot = await db.collection('needs').get();
-    const volunteersSnapshot = await db.collection('volunteers').get();
-    
-    const needs = needsSnapshot.docs.map(doc => doc.data());
-    const volunteers = volunteersSnapshot.docs.map(doc => doc.data());
-    
-    const assignments = runMatching(needs, volunteers);
-    
-    await db.collection('meta').doc('assignments').set({ 
-      data: assignments,
-      updatedAt: admin.firestore.FieldValue.serverTimestamp()
-    });
-    
-    res.json({ success: true, assignments });
-  } catch (error) {
-    console.error('Matching error:', error);
-    res.status(500).json({ error: 'Failed to match' });
+  if (!db) {
+    mockAssignments = runMatching(mockNeeds, mockVolunteers);
+    return res.json({ success: true, assignments: mockAssignments });
   }
+  // Logic for DB already handled by listener
+  res.json({ success: true });
 });
 
 const runMatching = (needs, volunteers) => {
   const assignments = [];
-  const sortedNeeds = [...needs].sort((a, b) => b.urgencyScore - a.urgencyScore);
-  
+  const sortedNeeds = [...needs].sort((a, b) => (b.urgencyScore || 0) - (a.urgencyScore || 0));
   sortedNeeds.forEach(need => {
-    let bestMatch = null;
-    let highestScore = -1;
-
+    let bestMatch = null; let highestScore = -1;
     volunteers.forEach(vol => {
-      const skillMatch = vol.skills?.includes(need.type) ? 50 : 0;
-      const dist = Math.sqrt(Math.pow(vol.location?.lat - need.location?.lat, 2) + Math.pow(vol.location?.lng - need.location?.lng, 2));
+      const skillMatch = (vol.skills || []).includes(need.type) ? 50 : 0;
+      const dist = Math.sqrt(Math.pow((vol.location?.lat || 0) - (need.location?.lat || 0), 2) + Math.pow((vol.location?.lng || 0) - (need.location?.lng || 0), 2));
       const distanceScore = Math.max(0, 50 - (dist * 100));
       const total = skillMatch + distanceScore;
-
-      if (total > highestScore) {
-        highestScore = total;
-        bestMatch = vol;
-      }
+      if (total > highestScore) { highestScore = total; bestMatch = vol; }
     });
-
-    if (bestMatch) {
-      assignments.push({
-        needId: need.id,
-        volunteerId: bestMatch.id,
-        volunteerName: bestMatch.name,
-        matchScore: highestScore
-      });
-    }
+    if (bestMatch) assignments.push({ needId: need.id, volunteerId: bestMatch.id, volunteerName: bestMatch.name, matchScore: highestScore });
   });
   return assignments;
 };
 
-// Simulation Engine
-setInterval(async () => {
-  if (!db) return;
-  try {
-    const types = ['food', 'medical', 'shelter', 'logistics'];
-    const type = types[Math.floor(Math.random() * types.length)];
-    const needRef = db.collection('needs').doc();
-    await needRef.set({
-      type,
-      location: {
-        name: 'Simulated Area',
-        lat: 28.6 + (Math.random() - 0.5) * 0.2,
-        lng: 77.2 + (Math.random() - 0.5) * 0.2
-      },
-      urgencyScore: Math.floor(Math.random() * 40) + 60,
-      summary: `Auto-generated ${type} requirement.`,
-      id: needRef.id,
-      timestamp: admin.firestore.FieldValue.serverTimestamp()
-    });
-  } catch (e) { console.error('Sim error:', e); }
-}, 60000);
-
-server.listen(port, () => console.log(`🚀 AI Backend running at http://localhost:${port}`));
+server.listen(port, () => console.log(`🚀 Automated AI Backend running at http://localhost:${port}`));

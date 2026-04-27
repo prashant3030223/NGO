@@ -47,8 +47,8 @@ const UploadPanel = ({ onComplete }) => {
             <Database className="w-8 h-8 text-primary-500" />
           </div>
           <div>
-            <h2 className="text-3xl font-black font-display text-white tracking-tight">Intelligence Feed</h2>
-            <p className="text-slate-500 text-sm font-medium">Injecting raw community data into the AI coordination core.</p>
+            <h2 className="text-3xl font-black font-display text-white tracking-tight">Upload Center</h2>
+            <p className="text-slate-500 text-sm font-medium">Add new reports from the field to start matching.</p>
           </div>
         </div>
 
@@ -57,7 +57,7 @@ const UploadPanel = ({ onComplete }) => {
             <label className="flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-3xl p-12 hover:border-primary-500/50 hover:bg-primary-500/5 transition-all cursor-pointer group relative overflow-hidden">
               <div className="absolute inset-0 bg-gradient-to-br from-primary-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
               <Upload className="w-12 h-12 text-slate-600 group-hover:text-primary-400 mb-4 transition-transform group-hover:-translate-y-1" />
-              <span className="text-sm font-bold text-slate-300 tracking-wide uppercase">Deep Scan Upload</span>
+              <span className="text-sm font-bold text-slate-300 tracking-wide uppercase">File Upload</span>
               <span className="text-[10px] text-slate-600 mt-2 font-black tracking-widest uppercase">PDF • JPG • PNG</span>
               <input type="file" className="hidden" onChange={(e) => setFile(e.target.files[0])} />
               
@@ -75,7 +75,7 @@ const UploadPanel = ({ onComplete }) => {
             </label>
             <div className="flex items-center gap-2 px-4 py-3 bg-white/5 rounded-2xl border border-white/5">
               <Info className="w-4 h-4 text-primary-500" />
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">AI will perform OCR and NLP extraction.</p>
+              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">AI will read and understand your file.</p>
             </div>
           </div>
 
@@ -84,7 +84,7 @@ const UploadPanel = ({ onComplete }) => {
               <textarea 
                 value={textInput}
                 onChange={(e) => setTextInput(e.target.value)}
-                placeholder="OR INJECT MANUAL FIELD INTELLIGENCE HERE..."
+                placeholder="OR TYPE YOUR REPORT HERE..."
                 className="w-full h-full min-h-[200px] bg-white/[0.02] border border-white/5 rounded-3xl p-6 text-sm font-medium focus:border-primary-500 focus:bg-white/[0.05] outline-none transition-all resize-none placeholder:text-slate-700 placeholder:font-black placeholder:tracking-widest"
               />
               <div className="absolute top-4 right-4 pointer-events-none">
@@ -101,11 +101,11 @@ const UploadPanel = ({ onComplete }) => {
             className="w-full relative group overflow-hidden bg-white hover:bg-slate-100 disabled:bg-slate-900 disabled:text-slate-700 text-black py-5 rounded-3xl font-black text-sm uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-4 shadow-2xl shadow-white/5"
           >
             {uploading ? (
-              <><Loader2 className="w-5 h-5 animate-spin" /> Neural Processing In Progress...</>
+              <><Loader2 className="w-5 h-5 animate-spin" /> Analyzing data...</>
             ) : result ? (
-              <><CheckCircle className="w-5 h-5 text-emerald-600" /> Extraction Matrix Complete</>
+              <><CheckCircle className="w-5 h-5 text-emerald-600" /> Data Extracted</>
             ) : (
-              <><Send className="w-5 h-5" /> Execute Data Injection</>
+              <><Send className="w-5 h-5" /> Upload Report</>
             )}
           </button>
         </div>
@@ -121,15 +121,15 @@ const UploadPanel = ({ onComplete }) => {
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <ShieldAlert className="w-12 h-12 text-emerald-500" />
               </div>
-              <h4 className="text-emerald-400 font-black text-[10px] tracking-widest uppercase mb-2">AI Extraction Results</h4>
+              <h4 className="text-emerald-400 font-black text-[10px] tracking-widest uppercase mb-2">AI Results</h4>
               <p className="text-slate-200 text-sm font-medium leading-relaxed mb-4">{result.summary}</p>
               <div className="flex gap-6">
                 <div>
-                  <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Extracted Type</div>
+                  <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Category</div>
                   <div className="text-xs font-bold text-white uppercase">{result.type}</div>
                 </div>
                 <div>
-                  <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Urgency Matrix</div>
+                  <div className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Urgency</div>
                   <div className="text-xs font-bold text-emerald-400">{result.urgencyScore}% CRITICAL</div>
                 </div>
               </div>
